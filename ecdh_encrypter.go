@@ -54,6 +54,10 @@ func NewECDHEncrypter(opts ...ECDHEncrypterOption) (*ECDHEncrypter, error) {
 // Encrypt encrypts the provided data with AES in CFB mode and returns
 // the encrypted data and any error that occurred.
 func (e *ECDHEncrypter) Encrypt(data []byte) ([]byte, error) {
+	if len(data) == 0 {
+		return nil, ErrShortData
+	}
+
 	block, err := aes.NewCipher(e.privateKey.Bytes())
 	if err != nil {
 		return nil, err

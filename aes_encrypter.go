@@ -5,18 +5,8 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"errors"
 	"fmt"
 	"io"
-)
-
-var (
-	// ErrShortData is returned when the provided text is too short to be encrypted.
-	ErrShortData = errors.New("data is too short")
-)
-
-const (
-	AESEncryptorType EncryptorType = "AES"
 )
 
 // AESEncryptor encrypts and decrypts data using AES in CBC mode.
@@ -39,7 +29,7 @@ func GenerateAESKey() ([]byte, error) {
 // NewAESEncryptor creates a new encryption struct with the provided key.
 func NewAESEncryptor(key []byte) (*AESEncryptor, error) {
 	if len(key) != 32 { // 256 bits
-		return nil, fmt.Errorf("invalid key size: %d", len(key))
+		return nil, fmt.Errorf("%w: %d", ErrInvalidKeyLength, len(key))
 	}
 
 	return &AESEncryptor{key: key}, nil
@@ -47,6 +37,10 @@ func NewAESEncryptor(key []byte) (*AESEncryptor, error) {
 
 // Encrypt encrypts the provided data with AES in CBC mode and returns the encrypted data and any error that occurred.
 func (e *AESEncryptor) Encrypt(data []byte) ([]byte, error) {
+	if len(data) == 0 {
+		return nil, ErrShortData
+	}
+
 	block, err := aes.NewCipher(e.key)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cipher: %v", err)
