@@ -9,6 +9,8 @@ import (
 	"io"
 )
 
+const AESKeyLength = 32
+
 // AESEncryptor encrypts and decrypts data using AES in CBC mode.
 // https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
 // You can initialize this encryptor with NewAESEncryptor(key) and use it with Encrypt and Decrypt.
@@ -18,9 +20,9 @@ type AESEncryptor struct {
 
 // GenerateAESKey generates a random 256-bit key and returns it.
 func GenerateAESKey() ([]byte, error) {
-	key := make([]byte, 32) // 256 bits
+	key := make([]byte, AESKeyLength) // 256 bits
 	if _, err := rand.Read(key); err != nil {
-		return nil, fmt.Errorf("failed to generate key: %v", err)
+		return nil, fmt.Errorf("failed to generate key: %w", err)
 	}
 
 	return key, nil
@@ -28,7 +30,7 @@ func GenerateAESKey() ([]byte, error) {
 
 // NewAESEncryptor creates a new encryption struct with the provided key.
 func NewAESEncryptor(key []byte) (*AESEncryptor, error) {
-	if len(key) != 32 { // 256 bits
+	if len(key) != AESKeyLength { // 256 bits
 		return nil, fmt.Errorf("%w: %d", ErrInvalidKeyLength, len(key))
 	}
 
@@ -43,7 +45,7 @@ func (e *AESEncryptor) Encrypt(data []byte) ([]byte, error) {
 
 	block, err := aes.NewCipher(e.key)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create cipher: %v", err)
+		return nil, fmt.Errorf("failed to create cipher: %w", err)
 	}
 
 	// Padding
@@ -51,8 +53,10 @@ func (e *AESEncryptor) Encrypt(data []byte) ([]byte, error) {
 	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
 	data = append(data, padtext...)
 
-	// The IV needs to be unique, but not secure. Therefore it's common to include it at the beginning of the ciphertext.
+	// The IV needs to be unique, but not secure. Therefore it's common
+	// to include it at the beginning of the ciphertext.
 	cipherText := make([]byte, aes.BlockSize+len(data))
+
 	iv := cipherText[:aes.BlockSize]
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
 		return nil, fmt.Errorf("failed to read random data: %v", err)
@@ -64,18 +68,20 @@ func (e *AESEncryptor) Encrypt(data []byte) ([]byte, error) {
 	return cipherText, nil
 }
 
-// Decrypt decrypts the provided ciphertext with AES in CBC mode and returns the decrypted data and any error that occurred.
+// Decrypt decrypts the provided ciphertext with AES in CBC mode and
+// returns the decrypted data and any error that occurred.
 func (e *AESEncryptor) Decrypt(cipherText []byte) ([]byte, error) {
 	block, err := aes.NewCipher(e.key)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create cipher: %v", err)
+		return nil, fmt.Errorf("failed to create cipher: %w", err)
 	}
 
 	if len(cipherText) < aes.BlockSize {
 		return nil, ErrShortData
 	}
 
-	// The IV needs to be unique, but not secure. Therefore it's common to include it at the beginning of the ciphertext.
+	// The IV needs to be unique, but not secure. Therefore it's common to
+	// include it at the beginning of the ciphertext.
 	iv := cipherText[:aes.BlockSize]
 	cipherText = cipherText[aes.BlockSize:]
 

@@ -15,4 +15,6 @@
 //     An instance of the ECDH Encryptor can be created using the NewECDHEncryptor function.
 //
 // The package also provides test functions to test the encryption and decryption functionality of each encryptor.
+//
+//nolint:lll
 package e2eenc

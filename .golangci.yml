@@ -1,0 +1,28 @@
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - govet
+    - errcheck
+    - goconst
+    - gosimple
+    - staticcheck
+    - revive
+    - unused
+    - ineffassign
+    - gosec
+    - misspell
+    - stylecheck
+    - unconvert
+
+  disable:
+    - gochecknoglobals
+    - gochecknoinits
+
+settings:
+  govet:
+    check-shadow: true
+  gosec:
+    exclude-dirs:
+      - vendor

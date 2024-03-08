@@ -17,10 +17,10 @@ var (
 
 type Encryptor interface {
 	// Encrypt encrypts the provided data.
-	Encrypt([]byte) ([]byte, error)
+	Encrypt(data []byte) ([]byte, error)
 
 	// Decrypt decrypts the provided data.
-	Decrypt([]byte) ([]byte, error)
+	Decrypt(data []byte) ([]byte, error)
 
 	// Type returns the type of the encryptor.
 	Type() EncryptorType

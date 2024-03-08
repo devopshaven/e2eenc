@@ -5,7 +5,6 @@ import (
 	"crypto/cipher"
 	"crypto/ecdh"
 	"crypto/rand"
-	"errors"
 	"fmt"
 	"io"
 )
@@ -32,23 +31,23 @@ func WithPublicKey(pubKey *ecdh.PublicKey) ECDHEncrypterOption {
 }
 
 func NewECDHEncrypter(opts ...ECDHEncrypterOption) (*ECDHEncrypter, error) {
-	e := new(ECDHEncrypter)
+	enc := new(ECDHEncrypter)
 
 	// Apply options
 	for _, opt := range opts {
-		opt(e)
+		opt(enc)
 	}
 
-	if e.privateKey == nil {
+	if enc.privateKey == nil {
 		privKey, err := ecdh.P256().GenerateKey(rand.Reader)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate key: %v", err)
 		}
 
-		e.privateKey = privKey
+		enc.privateKey = privKey
 	}
 
-	return e, nil
+	return enc, nil
 }
 
 // Encrypt encrypts the provided data with AES in CFB mode and returns
@@ -60,13 +59,14 @@ func (e *ECDHEncrypter) Encrypt(data []byte) ([]byte, error) {
 
 	block, err := aes.NewCipher(e.privateKey.Bytes())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create cipher: %v", err)
 	}
 
 	ciphertext := make([]byte, aes.BlockSize+len(data))
+
 	iv := ciphertext[:aes.BlockSize]
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read random data: %v", err)
 	}
 
 	stream := cipher.NewCFBEncrypter(block, iv)
@@ -78,11 +78,11 @@ func (e *ECDHEncrypter) Encrypt(data []byte) ([]byte, error) {
 func (e *ECDHEncrypter) Decrypt(data []byte) ([]byte, error) {
 	block, err := aes.NewCipher(e.privateKey.Bytes())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create cipher: %v", err)
 	}
 
 	if len(data) < aes.BlockSize {
-		return nil, errors.New("ciphertext too short")
+		return nil, ErrShortData
 	}
 
 	iv := data[:aes.BlockSize]

@@ -8,32 +8,32 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func testEncryption(e e2eenc.Encryptor, t *testing.T) {
+func testEncryption(t *testing.T, enc e2eenc.Encryptor) {
 	t.Helper()
 
 	// Some random data to encrypt and decrypt
 	dataToEncrypt := []byte("Hello, world!")
 
 	// Check that the encryption struct is not nil
-	if e == nil {
+	if enc == nil {
 		t.Fatalf("Encryption struct is nil")
 	}
 
 	t.Run("TestInvalidSize", func(t *testing.T) {
-		if _, err := e.Encrypt([]byte("")); err == nil {
+		if _, err := enc.Encrypt([]byte("")); err == nil {
 			t.Errorf("Expected error, got nil")
 			assert.ErrorIs(t, err, e2eenc.ErrShortData)
 		}
 	})
 
 	// Encrypt the data
-	cipherText, err := e.Encrypt(dataToEncrypt)
+	cipherText, err := enc.Encrypt(dataToEncrypt)
 	if err != nil {
 		t.Fatalf("Failed to encrypt data: %v", err)
 	}
 
 	// Decrypt the ciphertext back into plaintext
-	plainText, err := e.Decrypt(cipherText)
+	plainText, err := enc.Decrypt(cipherText)
 	if err != nil {
 		t.Fatalf("Failed to decrypt data: %v", err)
 	}
@@ -54,27 +54,28 @@ func TestAES(t *testing.T) {
 	_, err = e2eenc.NewAESEncryptor([]byte("invalid"))
 	assert.ErrorIs(t, err, e2eenc.ErrInvalidKeyLength)
 
-	// Create an e struct with the generated key
-	e, err := e2eenc.NewAESEncryptor(key)
+	// Create an enc struct with the generated key
+	enc, err := e2eenc.NewAESEncryptor(key)
 	if err != nil {
 		t.Fatalf("Failed to create encryption struct: %v", err)
 	}
 
-	assert.Equal(t, e.Type(), e2eenc.AESEncryptorType)
+	// Check that the correct cipher is initialized.
+	assert.Equal(t, enc.Type(), e2eenc.AESEncryptorType)
 
 	// Run the encryption test
-	testEncryption(e, t)
+	testEncryption(t, enc)
 }
 
 func TestECDH(t *testing.T) {
 	// Generate a new key
-	e, err := e2eenc.NewECDHEncrypter()
+	enc, err := e2eenc.NewECDHEncrypter()
 	if err != nil {
 		t.Fatalf("Failed to generate key: %v", err)
 	}
 
-	assert.Equal(t, e.Type(), e2eenc.ECDHEncryptorType)
+	assert.Equal(t, enc.Type(), e2eenc.ECDHEncryptorType)
 
 	// Run the encryption test
-	testEncryption(e, t)
+	testEncryption(t, enc)
 }
